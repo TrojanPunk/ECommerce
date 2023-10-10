@@ -91,7 +91,7 @@ html {
     padding: 0rem 1.5rem;
 }
 
-.add-cart-button {
+#add-cart-button {
     width: 3em;
     height: 3em;
     position: absolute;
@@ -101,12 +101,12 @@ html {
     color: #C0EA88;
 }
 
-.add-cart-button:hover {
+#add-cart-button:hover {
     background: #C0EA88;
     color: #141414;
 }
 
-.add-cart-button:focus {
+#add-cart-button:focus {
     outline: none;
 }
 

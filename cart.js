@@ -10,11 +10,13 @@ document.getElementById("productCards").addEventListener("click", function (even
             var products = JSON.parse(localStorage.getItem("products"));
             var product = getProductById(productId);
             if (product) {
-                addToCart(product); // Call the addToCart function here
+                addToCart(product);
+                currentPrice = product.price; // Initialize currentPrice
             }
         }
     }
 });
+var currentPrice = 0; // Initialize the currentPrice
 function displayCartItems() {
     var cartItemsContainer = document.getElementById('cart-items');
     var cart = getCartFromLocalStorage();
@@ -32,7 +34,7 @@ function displayCartItems() {
 function createCartItemElement(cartItem) {
     var cartItemElement = document.createElement('div');
     cartItemElement.classList.add('cart-item');
-    cartItemElement.innerHTML = "\n        <div class=\"cart-list d-flex align-items-center justify-content-between\">\n            <div class=\"cart-item-image d-flex align-items-center\">\n                <img class=\"card-img-top\" src=\"".concat(cartItem.image, "\" alt=\"").concat(cartItem.title, "\">\n                <p class=\"card-title\" id=\"cart-title\">").concat(cartItem.title, "</p>\n            </div>\n            \n            <div class=\"cart-item-details d-flex\" style=\"color: white;\">\n                <div class=\"denomination d-flex flex-column justify-content-center\">\n                    <p id=\"price\" class=\"cart-list-price\">$").concat(cartItem.price, "</p>\n                    <div class=\"quantity-controls\">\n                        <button id=\"decrease\" class=\"btn btn-primary decrease-quantity\" data-product-id=\"").concat(cartItem.id, "\">-</button>\n                        <span id=\"quantity\">").concat(cartItem.quantity, "</span>\n                        <button id=\"increase\" class=\"btn btn-primary increase-quantity\" data-product-id=\"").concat(cartItem.id, "\">+</button>\n                    </div>\n                </div>\n            </div>\n        </div>\n    ");
+    cartItemElement.innerHTML = "\n        <div class=\"cart-list d-flex align-items-center justify-content-between\">\n            <div class=\"cart-item-image d-flex align-items-center\">\n                <img class=\"card-img-top\" src=\"".concat(cartItem.image, "\" alt=\"").concat(cartItem.title, "\">\n                <p class=\"card-title\" id=\"cart-title\">").concat(cartItem.title, "</p>\n            </div>\n            \n            <div class=\"cart-item-details d-flex\" style=\"color: white;\">\n                <div class=\"denomination d-flex flex-column justify-content-center\">\n                    <p id=\"price\" class=\"cart-list-price\">$").concat(cartItem.price, "</p>\n                    <div class=\"quantity-controls\">\n                        <button onclick=decreaseQuantity(").concat(cartItem.id, ") id=\"decrease\" class=\"btn btn-primary decrease-quantity\" data-product-id=\"").concat(cartItem.id, "\">-</button>\n                        <span id=\"quantity\">").concat(cartItem.quantity, "</span>\n                        <button onclick=increaseQuantity(").concat(cartItem.id, ") id=\"increase\" class=\"btn btn-primary increase-quantity\" data-product-id=\"").concat(cartItem.id, "\">+</button>\n                    </div>\n                </div>\n            </div>\n        </div>\n    ");
     return cartItemElement;
 }
 function calculateTotalPrice() {
@@ -75,14 +77,16 @@ function decreaseQuantity(productId) {
         if (cartItem.id === productId) {
             if (cartItem.quantity > 1) {
                 cartItem.quantity--;
+                cartItem.price = cartItem.price * cartItem.quantity;
             }
             else {
                 // If quantity is 1 or less, remove the item from the cart
-                updatedCart = updatedCart.filter(function (item) { return item.id !== productId; });
+                return null; // Set the item to null to filter it out
             }
         }
         return cartItem;
     });
+    updatedCart = updatedCart.filter(function (item) { return item !== null; }); // Remove null items
     saveCartToLocalStorage(updatedCart);
     displayCartItems();
     calculateTotalPrice();
@@ -92,6 +96,7 @@ function increaseQuantity(productId) {
     var updatedCart = cart.map(function (cartItem) {
         if (cartItem.id === productId) {
             cartItem.quantity++;
+            cartItem.price = cartItem.price * cartItem.quantity;
         }
         return cartItem;
     });

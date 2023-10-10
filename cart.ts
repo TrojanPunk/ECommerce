@@ -11,12 +11,14 @@ document.getElementById("productCards")!.addEventListener("click", (event) => {
             const products = JSON.parse(localStorage.getItem("products")!);
             const product = getProductById(productId);
             if (product) {
-                addToCart(product); // Call the addToCart function here
+                addToCart(product);
+                currentPrice = product.price; // Initialize currentPrice
             }
         }
     }
 });
 
+let currentPrice = 0; // Initialize the currentPrice
 
 
 function displayCartItems() {
@@ -50,9 +52,9 @@ function createCartItemElement(cartItem) {
                 <div class="denomination d-flex flex-column justify-content-center">
                     <p id="price" class="cart-list-price">$${cartItem.price}</p>
                     <div class="quantity-controls">
-                        <button id="decrease" class="btn btn-primary decrease-quantity" data-product-id="${cartItem.id}">-</button>
+                        <button onclick=decreaseQuantity(${cartItem.id}) id="decrease" class="btn btn-primary decrease-quantity" data-product-id="${cartItem.id}">-</button>
                         <span id="quantity">${cartItem.quantity}</span>
-                        <button id="increase" class="btn btn-primary increase-quantity" data-product-id="${cartItem.id}">+</button>
+                        <button onclick=increaseQuantity(${cartItem.id}) id="increase" class="btn btn-primary increase-quantity" data-product-id="${cartItem.id}">+</button>
                     </div>
                 </div>
             </div>
@@ -103,28 +105,33 @@ document.getElementById('cart-items').addEventListener('click', (event) => {
 
 function decreaseQuantity(productId) {
     const cart = getCartFromLocalStorage();
-    const updatedCart = cart.map((cartItem) => {
+    let updatedCart = cart.map((cartItem) => {
         if (cartItem.id === productId) {
             if (cartItem.quantity > 1) {
                 cartItem.quantity--;
+                cartItem.price = cartItem.price * cartItem.quantity;
             } else {
                 // If quantity is 1 or less, remove the item from the cart
-                updatedCart = updatedCart.filter((item) => item.id !== productId);
+                return null; // Set the item to null to filter it out
             }
         }
         return cartItem;
     });
+
+    updatedCart = updatedCart.filter((item) => item !== null); // Remove null items
 
     saveCartToLocalStorage(updatedCart);
     displayCartItems();
     calculateTotalPrice();
 }
 
+
 function increaseQuantity(productId) {
     const cart = getCartFromLocalStorage();
-    const updatedCart = cart.map((cartItem) => {
+    let updatedCart = cart.map((cartItem) => {
         if (cartItem.id === productId) {
             cartItem.quantity++;
+            cartItem.price = cartItem.price * cartItem.quantity;
         }
         return cartItem;
     });
