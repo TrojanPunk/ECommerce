@@ -1,54 +1,109 @@
-document.addEventListener("DOMContentLoaded", function () {
-    displayCartItems();
-    calculateTotalPrice();
-});
-document.getElementById("productCards").addEventListener("click", function (event) {
-    var target = event.target;
-    if (target.classList.contains("add-to-cart")) {
-        var productId = target.getAttribute("data-product-id");
-        if (productId) {
-            var products = JSON.parse(localStorage.getItem("products"));
-            var product = getProductById(productId);
-            if (product) {
-                addToCart(product);
-                currentPrice = product.price; // Initialize currentPrice
-            }
-        }
-    }
-});
-var currentPrice = 0; // Initialize the currentPrice
 function displayCartItems() {
-    var cartItemsContainer = document.getElementById('cart-items');
-    var cart = getCartFromLocalStorage();
-    cartItemsContainer.innerHTML = '';
+    const cartItemsContainer = document.getElementById('cart-items');
+    const cart = getCartFromLocalStorage();
+    const cartStatus = document.getElementById('empty-cart');
     if (cart && cart.length > 0) {
-        cart.forEach(function (cartItem) {
-            var cartItemElement = createCartItemElement(cartItem);
+        cart.forEach((cartItem) => {
+            if (cartItem.quantity < 1) {
+                cartStatus.style.padding = "20px";
+                const updatedCart = cart.filter(item => item.id !== cartItem.id);
+                saveCartToLocalStorage(updatedCart);
+                return;
+            }
+            const cartItemElement = createCartItemElement(cartItem);
             cartItemsContainer.appendChild(cartItemElement);
         });
     }
     else {
-        cartItemsContainer.innerHTML = '<p>Your cart is empty.</p>';
+        document.getElementById('summary-table').innerHTML = ``;
+        document.getElementById('proceed-to-checkout').innerHTML = ``;
+        cartStatus.innerHTML = "The cart is empty";
+        cartStatus.style.padding = "2rem";
+        cartStatus.style.textAlign = "center";
     }
 }
+document.addEventListener("DOMContentLoaded", () => {
+    displayCartItems();
+    calculateTotalPrice();
+    grandPrice();
+    seasonalOffer();
+});
+document.getElementById("productCards").addEventListener("click", (event) => {
+    let target = event.target;
+    if (target.classList.contains("add-to-cart")) {
+        const productId = target.getAttribute("data-product-id");
+        if (productId) {
+            const products = JSON.parse(localStorage.getItem("products"));
+            const product = getProductById(productId);
+            if (product) {
+                addToCart(product);
+            }
+        }
+    }
+});
 function createCartItemElement(cartItem) {
-    var cartItemElement = document.createElement('div');
+    const cartItemElement = document.createElement('div');
     cartItemElement.classList.add('cart-item');
-    cartItemElement.innerHTML = "\n        <div class=\"cart-list d-flex align-items-center justify-content-between\">\n            <div class=\"cart-item-image d-flex align-items-center\">\n                <img class=\"card-img-top\" src=\"".concat(cartItem.image, "\" alt=\"").concat(cartItem.title, "\">\n                <p class=\"card-title\" id=\"cart-title\">").concat(cartItem.title, "</p>\n            </div>\n            \n            <div class=\"cart-item-details d-flex\" style=\"color: white;\">\n                <div class=\"denomination d-flex flex-column justify-content-center\">\n                    <p id=\"price\" class=\"cart-list-price\">$").concat(cartItem.price, "</p>\n                    <div class=\"quantity-controls\">\n                        <button onclick=decreaseQuantity(").concat(cartItem.id, ") id=\"decrease\" class=\"btn btn-primary decrease-quantity\" data-product-id=\"").concat(cartItem.id, "\">-</button>\n                        <span id=\"quantity\">").concat(cartItem.quantity, "</span>\n                        <button onclick=increaseQuantity(").concat(cartItem.id, ") id=\"increase\" class=\"btn btn-primary increase-quantity\" data-product-id=\"").concat(cartItem.id, "\">+</button>\n                    </div>\n                </div>\n            </div>\n        </div>\n    ");
+    cartItemElement.innerHTML = `
+        <div class="cart-list d-flex align-items-center justify-content-between">
+            <div class="cart-item-image d-flex align-items-center">
+                <img id="cart-img" class="card-img-top" src="${cartItem.image}" alt="${cartItem.title}">
+                <p class="card-title" id="cart-title">${cartItem.title}</p>
+            </div>
+            
+            <div class="cart-item-details d-flex" style="color: white;">
+                <div class="denomination d-flex flex-column justify-content-center">
+                    <p id="price-${cartItem.id}" class="cart-list-price">$${(cartItem.currentPrice).toFixed(2)}</p>
+                    <div class="quantity-controls">
+                        <button onclick=decreaseQuantity(${cartItem.id}) id="decrease" class="btn btn-primary decrease-quantity" data-product-id="${cartItem.id}">-</button>
+                        <span class="quantity-amount" id="quantity-${cartItem.id}">${cartItem.quantity}</span>
+                        <button onclick=increaseQuantity(${cartItem.id}) id="increase" class="btn btn-primary increase-quantity" data-product-id="${cartItem.id}">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
     return cartItemElement;
 }
 function calculateTotalPrice() {
-    var cart = getCartFromLocalStorage();
-    var totalPriceContainer = document.getElementById('total-price');
+    const cart = getCartFromLocalStorage();
+    const totalPriceContainer = document.getElementById('total-price');
     if (cart && cart.length > 0) {
-        var totalPrice = cart.reduce(function (total, cartItem) {
+        const totalPrice = cart.reduce((total, cartItem) => {
             return total + (cartItem.price * cartItem.quantity);
         }, 0);
-        totalPriceContainer.innerHTML = "Total Price: $".concat(totalPrice);
+        totalPriceContainer.innerHTML = `$${totalPrice.toFixed(2)}`;
     }
     else {
         totalPriceContainer.innerHTML = '';
     }
+}
+function seasonalOffer() {
+    const offerValue = document.getElementById('offer');
+    const totalPrice = document.getElementById('total-price');
+    console.log(offerValue.innerHTML);
+    if (totalPrice) {
+        offerValue.innerHTML = ((parseInt(totalPrice.innerText.replace('$', '')) * 0.20).toFixed(2)).toString();
+    }
+    else {
+        offerValue.innerHTML = 'N/A'; // set default value for offerValue
+    }
+}
+function grandPrice() {
+    const deliveryPriceFetch = document.getElementById('delivery');
+    const offerPriceFetch = document.getElementById('offer');
+    let totalPrice = document.getElementById('total-price');
+    let grandPrice = document.getElementById('grand');
+    let deliveryPrice = 0;
+    let offerPrice = 0;
+    if (deliveryPriceFetch) {
+        deliveryPrice += parseFloat(deliveryPriceFetch.innerText);
+    }
+    if (offerPriceFetch) {
+        offerPrice += parseFloat(offerPriceFetch.innerText);
+    }
+    if (grandPrice && totalPrice)
+        grandPrice.innerHTML = ((parseFloat(totalPrice.innerText.replace('$', '')) - offerPrice + deliveryPrice).toFixed(2)).toString();
 }
 function getCartFromLocalStorage() {
     return JSON.parse(localStorage.getItem('cart') || '[]');
@@ -56,51 +111,57 @@ function getCartFromLocalStorage() {
 function saveCartToLocalStorage(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
 }
-document.getElementById('cart-items').addEventListener('click', function (event) {
-    var target = event.target;
+document.getElementById('cart-items').addEventListener('click', (event) => {
+    const target = event.target;
     if (target.classList.contains('decrease-quantity')) {
-        var productId = target.getAttribute('data-product-id');
+        const productId = target.getAttribute('data-product-id');
         if (productId) {
             decreaseQuantity(productId);
         }
     }
     else if (target.classList.contains('increase-quantity')) {
-        var productId = target.getAttribute('data-product-id');
+        const productId = target.getAttribute('data-product-id');
         if (productId) {
             increaseQuantity(productId);
         }
     }
 });
 function decreaseQuantity(productId) {
-    var cart = getCartFromLocalStorage();
-    var updatedCart = cart.map(function (cartItem) {
+    const cart = getCartFromLocalStorage();
+    let updatedCart = cart.map((cartItem) => {
         if (cartItem.id === productId) {
             if (cartItem.quantity > 1) {
                 cartItem.quantity--;
-                cartItem.price = cartItem.price * cartItem.quantity;
+                cartItem.currentPrice -= cartItem.price;
+                document.getElementById("price-" + cartItem.id).innerText = '$' + cartItem.currentPrice.toFixed(2);
+                document.getElementById("quantity-" + cartItem.id).innerText = cartItem.quantity;
             }
             else {
-                // If quantity is 1 or less, remove the item from the cart
-                return null; // Set the item to null to filter it out
+                return null;
             }
         }
         return cartItem;
     });
-    updatedCart = updatedCart.filter(function (item) { return item !== null; }); // Remove null items
+    updatedCart = updatedCart.filter((item) => item !== null);
     saveCartToLocalStorage(updatedCart);
-    displayCartItems();
     calculateTotalPrice();
+    grandPrice();
 }
 function increaseQuantity(productId) {
-    var cart = getCartFromLocalStorage();
-    var updatedCart = cart.map(function (cartItem) {
+    const cart = getCartFromLocalStorage();
+    let updatedCart = cart.map((cartItem) => {
         if (cartItem.id === productId) {
+            console.error(cartItem.quantity);
             cartItem.quantity++;
-            cartItem.price = cartItem.price * cartItem.quantity;
+            console.error(cartItem.quantity);
+            cartItem.currentPrice = cartItem.price * cartItem.quantity;
+            console.log(cartItem, cartItem.currentPrice, cartItem.quantity);
+            document.getElementById("price-" + (cartItem.id).toString()).innerText = '$' + cartItem.currentPrice.toFixed(2);
+            document.getElementById("quantity-" + (cartItem.id).toString()).innerText = cartItem.quantity;
         }
         return cartItem;
     });
     saveCartToLocalStorage(updatedCart);
-    displayCartItems();
     calculateTotalPrice();
+    grandPrice();
 }

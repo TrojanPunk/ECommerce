@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const product = getProductById(productId);
 
                 // Add the product to the cart
-                addToCart(product);
+                addToCart(product.id);
 
                 // Redirect to the cart page
                 window.location.href = 'cart.html';
@@ -64,20 +64,26 @@ function saveCartToLocalStorage(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
 }
 
-function addToCart(product) {
-    const cart = getCartItemsFromLocalStorage();
+function addToCart(prod: string) {
+    console.warn(prod);
+    const product = getProductById(JSON.parse(prod));
+    console.log(product);
+    const cart = getCartItemsFromLocalStorage()
 
     const existingCartItem = cart.find((cartItem) => cartItem.id === product.id);
 
     if (existingCartItem) {
+        console.log(existingCartItem);
         existingCartItem.quantity++;
     } else {
+        console.log(existingCartItem);
         cart.push({
             id: product.id,
             title: product.title,
             image: product.image,
             price: product.price,
             quantity: 1,
+            currentPrice: product.price,
         });
     }
 
@@ -116,6 +122,7 @@ function displayProducts(products) {
         if (isValidProduct(product)) {
             const card = document.createElement('div');
             card.classList.add('col-md-4', 'mb-4', 'col-lg-3');
+            const prod = JSON.stringify(product);
 
             card.innerHTML = `
             <div class="card" data-product-id="${product.id}">
@@ -129,8 +136,8 @@ function displayProducts(products) {
                             <p class="card-text" id="ratings">Rating: ${product.rating.rate} <span class="rating-count">(${product.rating.count} reviews)</span></p>
                             <p class="card-text" id="price">$${product.price}</p>
                         </div>
-                        <button id="add-cart-button" class="btn btn-primary add-to-cart d-flex justify-content-center align-items-center rounded-circle p-20" data-product-id="${product.id}">
-                            <span class="material-symbols-rounded">
+                        <button id="add-cart-button" class="btn btn-primary add-to-cart d-flex justify-content-center align-items-center rounded-circle p-20" onclick="addToCart(${product.id})" data-product-id="${product.id}">
+                            <span href="cart.html" class="material-symbols-rounded">
                                 add_shopping_cart
                             </span>
                         </button>
